@@ -1,7 +1,7 @@
 create database aura;
 
 create table user_table(
-    "id" int PRIMARY KEY,
+    "id" serial PRIMARY KEY,
     "name" varchar(30),
     "phone_no" int,
     "email" varchar(200),
@@ -21,4 +21,23 @@ create table user_table(
     "update_at" varchar(64),
     "created_by" varchar(64),
     "update_by" varchar(64)
+);
+
+CREATE TABLE "login" (
+  "id" serial PRIMARY KEY,
+  "userid" int,
+  "successfull_login" varchar,
+  "timesoflogin" int,
+  "logindevice" varchar,
+  "login_ip" varchar,
+  "login_location" varchar,
+  "invalidlogin" varchar,
+  "status" int,
+  "created_at" varchar(64),
+  "update_at" varchar(64),
+  "created_by" varchar(64),
+  "update_by" varchar(64),
+   CONSTRAINT fk_userid
+      FOREIGN KEY(userid) 
+	  REFERENCES user_table("id")
 );

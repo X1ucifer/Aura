@@ -2,6 +2,7 @@ const localStorage = require('local-storage');
 var otpGenerator = require('otp-generator');
 const jwt = require('jsonwebtoken');
 const  pool  = require("../../db");
+const { v4: uuidv4 } = require('uuid')
 const { send_sms } = require("../../components/sendotp");
 
 exports.signup = async (req, res) => {
@@ -128,7 +129,7 @@ exports.login = async (req, res) => {
             success = {}
             phone_no = req.body.phone_no;
             otp = req.body.otp;
-            search_users = await pool.query(`SELECT * FROM users WHERE phone='${phone_no}'`); // searching users
+            search_users = await pool.query(`SELECT * FROM user_table WHERE phone_no='${phone_no}'`); // searching users
 
             itemStr = localStorage.get(phone_no)
             if (!itemStr) {
@@ -153,20 +154,20 @@ exports.login = async (req, res) => {
                 if (search_users.rows.length == 0) {
                     if (json_otp.otp === req.body.otp) { // if otp is matched then statement is execute
                         // User logins query
-                        user_id = uuid_v4() // user id in Users Table and logins Table
+                        user_id =  uuidv4();// user id in Users Table and logins Table
                         current_datetime = new Date().getTime()
                         logins_query = `
-                INSERT INTO logins (id,userid, successfullogin)
-                VALUES ($1, $2, $3)
+                INSERT INTO login (successfull_login)
+                VALUES ($1)
             `;
-                        logins_values = [uuid_v4(), user_id, current_datetime]
+                        logins_values = [current_datetime]
                         users_query = `
-                INSERT INTO users (id,phone,createdat,updatedat)
-                VALUES ($1,$2,$3,$4)
+                INSERT INTO user_table (phone_no,created_at,update_at)
+                VALUES ($1,$2,$3)
                 RETURNING *
             `
                         await pool.query(logins_query, logins_values);
-                        users_values = [user_id, phone_no, current_datetime, current_datetime]
+                        users_values = [phone_no, current_datetime, current_datetime]
                         users_data = await pool.query(users_query, users_values);
 
                         token = jwt.sign({ _id: user_id }, process.env.JWT_SECRET, {
@@ -206,7 +207,7 @@ exports.login = async (req, res) => {
                         // send user as json response
 
                         localStorage.remove(phone_no)
-                        await pool.query(`UPDATE logins
+                        await pool.query(`UPDATE login
                 SET invalidloginattempt = 0
                 WHERE userid = '${search_users.rows[0].id}';`)
                         users_data_rows = search_users.rows
@@ -216,13 +217,13 @@ exports.login = async (req, res) => {
                             message: users_data_rows
                         });
                     } else {
-                        loginattempts = await pool.query(`SELECT * FROM logins WHERE userid ='${search_users.rows[0].id}'`)
-                        await pool.query(`UPDATE logins
+                        loginattempts = await pool.query(`SELECT * FROM login WHERE userid ='${search_users.rows[0].id}'`)
+                        await pool.query(`UPDATE login
         SET invalidloginattempt = ${loginattempts.rows[0].invalidloginattempt + 1}
         WHERE userid = '${search_users.rows[0].id}';`)
                         invalidloginattempts = search_users.rows[0].invalidloginattempts + 1
                         const failed_login_date = new Date().getTime()
-                        await pool.query(`UPDATE logins
+                        await pool.query(`UPDATE login
                 SET failedlogin =  '${failed_login_date}'
                 WHERE userid = '${search_users.rows[0].id}';`)
                         errors.incorrect_otp = []
