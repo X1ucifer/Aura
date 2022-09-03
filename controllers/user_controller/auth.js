@@ -1,7 +1,7 @@
 const localStorage = require('local-storage');
 var otpGenerator = require('otp-generator');
 const jwt = require('jsonwebtoken');
-const  pool  = require("../../db");
+const pool = require("../../db");
 const { v4: uuidv4 } = require('uuid')
 const { send_sms } = require("../../components/sendotp");
 
@@ -33,11 +33,11 @@ exports.signup = async (req, res) => {
         }
     }
 
-    let search_users,otp,now,item
+    let search_users, otp, now, item
 
     if (Object.keys(errors).length === 0) {
         try {
-            phone_no  = req.body.phone_no;
+            phone_no = req.body.phone_no;
             if (localStorage.get(req.body.phone_no)) {
                 localStorage.remove(req.body.phone_no)
             }
@@ -73,7 +73,7 @@ exports.signup = async (req, res) => {
         }
     }
     if (Object.keys(errors).length === 0) {
-        res.status(200).json({status: 'Sucess',data: 'OTP send successfully'})
+        res.status(200).json({ status: 'Sucess', data: 'OTP send successfully' })
 
     } else {
         res.status(400).json({ status: "ERROR", errors: errors })
@@ -95,7 +95,7 @@ exports.login = async (req, res) => {
             errors.action.push('Unable to parse request body. ' + err.message);
         }
     }
-    let phone_no,otp,bodykeys
+    let phone_no, otp, bodykeys
     if (Object.keys(errors).length === 0) {
         phone_no = body.phone_no;
         otp = body.otp;
@@ -122,8 +122,8 @@ exports.login = async (req, res) => {
             errors.phone.push("Phone number and OTP is required")
         }
     }
-    let success,itemStr,search_users,item,now,valid_otp,user_id,
-    current_datetime,logins_query,logins_values,users_query,users_values,token,loginattempts,invalidloginattempts;
+    let success, itemStr, search_users, item, now, valid_otp, user_id,
+        current_datetime, logins_query, logins_values, users_query, users_values, token, loginattempts, invalidloginattempts;
     if (Object.keys(errors).length === 0) {
         try {
             success = {}
@@ -154,23 +154,28 @@ exports.login = async (req, res) => {
                 if (search_users.rows.length == 0) {
                     if (json_otp.otp === req.body.otp) { // if otp is matched then statement is execute
                         // User logins query
-                        user_id =  uuidv4();// user id in Users Table and logins Table
+                        user_id = uuidv4();// user id in Users Table and logins Table
                         current_datetime = new Date().getTime()
-                        logins_query = `
-                INSERT INTO login (successfull_login)
-                VALUES ($1)
-            `;
-                        logins_values = [current_datetime]
+
+
                         users_query = `
                 INSERT INTO user_table (phone_no,created_at,update_at)
                 VALUES ($1,$2,$3)
                 RETURNING *
             `
-                        await pool.query(logins_query, logins_values);
+
                         users_values = [phone_no, current_datetime, current_datetime]
                         users_data = await pool.query(users_query, users_values);
 
-                        token = jwt.sign({ _id: user_id }, process.env.JWT_SECRET, {
+                        logins_query = `
+                        INSERT INTO login (userid,successfull_login)
+                        VALUES ($1,$2)
+                    `;
+                        logins_values = [users_data.rows[0].id, current_datetime]
+                        await pool.query(logins_query, logins_values);
+
+
+                        token = jwt.sign({ _id: users_data.rows[0].id }, process.env.JWT_SECRET, {
                             expiresIn: "7d",
                         });
                         // return user and token to client, exclude hashed password
@@ -181,7 +186,7 @@ exports.login = async (req, res) => {
                         });
                         // send user as json response
                         users_data_rows = users_data.rows
-                        console.log(users_data_rows)
+                        console.log("user-Table", users_data_rows.id)
                         users_data_rows[0].id = undefined;
                         localStorage.remove(phone_no)
                         success.success_json = []
@@ -193,6 +198,9 @@ exports.login = async (req, res) => {
                 }
 
                 else {
+
+                    // this statement execute wheather the user is already in a database
+
                     if (json_otp.otp === req.body.otp) {
                         // console.log(search_users.rows[0].id)
                         token = jwt.sign({ _id: search_users.rows[0].id }, process.env.JWT_SECRET, {
@@ -208,7 +216,7 @@ exports.login = async (req, res) => {
 
                         localStorage.remove(phone_no)
                         await pool.query(`UPDATE login
-                SET invalidloginattempt = 0
+                SET invalidlogin = 0
                 WHERE userid = '${search_users.rows[0].id}';`)
                         users_data_rows = search_users.rows
                         // users_data_rows[0].id = undefined;
