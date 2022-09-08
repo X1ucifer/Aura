@@ -5,6 +5,11 @@ const pool = require("../../db");
 const { v4: uuidv4 } = require('uuid')
 const { send_sms } = require("../../components/sendotp");
 
+
+exports.current_user = async (req, res) => {
+    res.send("HI")
+}
+
 exports.signup = async (req, res) => {
     let errors = {}
     let body = req.body;
