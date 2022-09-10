@@ -164,7 +164,7 @@ exports.login = async (req, res) => {
 
 
                         users_query = `
-                INSERT INTO user_table (phone_no,created_at,update_at)
+                INSERT INTO user (phone_no,created_at,update_at)
                 VALUES ($1,$2,$3)
                 RETURNING *
             `
