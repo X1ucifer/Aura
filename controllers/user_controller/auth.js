@@ -47,7 +47,7 @@ exports.signup = async (req, res) => {
                 localStorage.remove(req.body.phone_no)
             }
             console.log(localStorage.get(req.body.phone_no))
-            search_users = await pool.query(`SELECT * FROM user_table WHERE phone_no='${phone_no}'`); // searching users
+            search_users = await pool.query(`SELECT * FROM user WHERE phone_no='${phone_no}'`); // searching users
             otp = otpGenerator.generate(6, { lowerCaseAlphabets: false, specialChars: false, upperCaseAlphabets: false }); // generate otp;
             now = new Date()
             item = {
@@ -134,7 +134,7 @@ exports.login = async (req, res) => {
             success = {}
             phone_no = req.body.phone_no;
             otp = req.body.otp;
-            search_users = await pool.query(`SELECT * FROM user_table WHERE phone_no='${phone_no}'`); // searching users
+            search_users = await pool.query(`SELECT * FROM user WHERE phone_no='${phone_no}'`); // searching users
 
             itemStr = localStorage.get(phone_no)
             if (!itemStr) {
