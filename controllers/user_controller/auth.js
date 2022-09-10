@@ -34,7 +34,7 @@ exports.signup = async (req, res) => {
             }
         } else {
             errors.phone = []
-            errors.phone.push("Phone number is required")
+            errors.phone.push("Phone number is required");
         }
     }
 
