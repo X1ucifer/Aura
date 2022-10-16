@@ -7,7 +7,7 @@ const { send_sms } = require("../../components/sendotp");
 
 
 exports.current_user = async (req, res) => {
-    res.send("HI")
+    res.send("Hello")
 }
 
 exports.signup = async (req, res) => {
